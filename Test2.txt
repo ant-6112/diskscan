@@ -1,0 +1,4 @@
+@echo off
+REM This is Listing Down all the Files in the Directory
+ls "./" > "list.txt"
+echo "The Program has Completed"
