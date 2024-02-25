@@ -1,8 +1,11 @@
 @echo off
 setlocal enabledelayedexpansion
-for /R %%G in (*) do (
+set /P dir=Enter a directory path: 
+set /P minSize=Enter the minimum file size (in MB): 
+for /R "%dir%" %%G in (*) do (
     set /A sizeMB=%%~zG/1048576
-    if !sizeMB! gtr 1 (
-        echo %%G is !sizeMB! MB
+    if !sizeMB! gtr !minSize! (
+        for /f "delims=" %%O in ('powershell -command "(Get-Acl '%%G').Owner"') do set owner=%%O
+        echo %%G is !sizeMB! MB, last modified by !owner!
     )
 )
