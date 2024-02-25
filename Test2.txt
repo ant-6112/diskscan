@@ -1,6 +1,8 @@
 @echo off
+setlocal enabledelayedexpansion
 for /R %%G in (*) do (
-    if %%~zG gtr 1048576 (
-        echo %%G is %%~zG bytes
+    set /A sizeMB=%%~zG/1048576
+    if !sizeMB! gtr 1 (
+        echo %%G is !sizeMB! MB
     )
 )
