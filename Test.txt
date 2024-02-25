@@ -1,0 +1,78 @@
+@echo off
+setlocal enabledelayedexpansion
+
+REM Set default values
+set "path=."
+set "minimum_size=10.0"
+set "unit=MB"
+
+REM Function to convert size to bytes
+:ConvertSizeToBytes
+set "size=%1"
+set "unit=%2"
+if /i "%unit%"=="KB" (set /a "size*=1024")
+if /i "%unit%"=="GB" (set /a "size*=1024*1024")
+exit /b
+
+REM Function to find large files
+:FindLargeFiles
+set "total_files=0"
+for /f %%A in ('git ls-files "%path%" ^| find /c /v ""') do set "total_files=%%A"
+
+set "multiplier=1"
+if /i "%unit%"=="KB" set "multiplier=1024"
+if /i "%unit%"=="GB" set "multiplier=1048576"
+
+set "size_threshold_bytes=%minimum_size%"
+call :ConvertSizeToBytes %minimum_size% %unit%
+
+set "index=0"
+for /f "delims=" %%F in ('git ls-files "%path%"') do (
+    set /a "index+=1"
+    set "file_path=%%F"
+    for /f "tokens=1,5 delims= " %%A in ('git log -1 --format^="%ai %H" -- "%file_path%"') do (
+        set "file_date=%%A"
+        set "file_hash=%%B"
+    )
+    set /a "file_size=git cat-file -s %file_hash%"
+
+    REM Check if file size exceeds threshold
+    if !file_size! gtr %size_threshold_bytes% (
+        set "Files_Found[!index!]=!file_path!"
+        set "File_Sizes[!index!]=!file_size!"
+        set "User_ID[!index!]=!file_date:~0,10!"
+    )
+    REM Display progress
+    set /a "progress=(index * 100) / total_files"
+    echo Searching for large files... !progress!%% complete
+)
+
+REM Display found files
+for /l %%i in (1,1,%index%) do (
+    set "file_path=!Files_Found[%%i]!"
+    set "file_size=!File_Sizes[%%i]!"
+    set "file_date=!User_ID[%%i]!"
+    echo !file_path!: !file_size! bytes (Created on: !file_date!)
+)
+
+REM Sort users by storage usage
+set "user_storage="
+for /l %%i in (1,1,%index%) do (
+    set "user_date=!User_ID[%%i]!"
+    set /a "user_storage[!user_date!]+=!File_Sizes[%%i]!"
+)
+
+REM Export top users data to Excel
+set "temp_file=%temp%\top_users_data.csv"
+echo Date,Storage (%unit%)> "%temp_file%"
+for /f "tokens=2,3 delims== " %%U in ('set user_storage[') do (
+    set /a "storage=%%V / multiplier"
+    echo %%U,!storage!>> "%temp_file%"
+)
+
+REM Open Excel workbook
+start excel "%temp_file%"
+
+echo.
+echo Top Users Data is Exported
+exit /b
