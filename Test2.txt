@@ -8,6 +8,7 @@ for /R "%dir%" %%G in (*) do (
     if !sizeMB! gtr !minSize! (
         for /f "delims=" %%O in ('powershell -command "(Get-Acl '%%G').Owner"') do set owner=%%O
         set /A "sizeByOwner[!owner!]+=sizeMB"
+        echo %%G,!sizeMB! >> "!owner!.csv"
     )
 )
 for /F "tokens=2,3 delims=[]=" %%G in ('set sizeByOwner[') do (
