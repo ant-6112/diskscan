@@ -2,6 +2,7 @@
 setlocal enabledelayedexpansion
 set /P dir=Enter a directory path: 
 set /P minSize=Enter the minimum file size (in MB): 
+echo Username,Storage Used > storage.csv
 for /R "%dir%" %%G in (*) do (
     set /A sizeMB=%%~zG/1048576
     if !sizeMB! gtr !minSize! (
@@ -10,5 +11,5 @@ for /R "%dir%" %%G in (*) do (
     )
 )
 for /F "tokens=2,3 delims=[]=" %%G in ('set sizeByOwner[') do (
-    echo User %%G has used !sizeByOwner[%%G]! MB
+    echo %%G,!sizeByOwner[%%G]! >> storage.csv
 )
