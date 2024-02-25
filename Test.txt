@@ -17,7 +17,7 @@ exit /b
 REM Function to find large files
 :FindLargeFiles
 set "total_files=0"
-for /f %%A in ('git ls-files "%path%" ^| find /c /v ""') do set "total_files=%%A"
+for /f %%A in ('powershell -Command "(Get-ChildItem -Path \"%path%\" -File -Recurse).Count"') do set "total_files=%%A"
 
 set "multiplier=1"
 if /i "%unit%"=="KB" set "multiplier=1024"
@@ -27,20 +27,21 @@ set "size_threshold_bytes=%minimum_size%"
 call :ConvertSizeToBytes %minimum_size% %unit%
 
 set "index=0"
-for /f "delims=" %%F in ('git ls-files "%path%"') do (
+for /f "delims=" %%F in ('powershell -Command "Get-ChildItem -Path \"%path%\" -File -Recurse | ForEach-Object { $_.FullName }"') do (
     set /a "index+=1"
     set "file_path=%%F"
-    for /f "tokens=1,5 delims= " %%A in ('git log -1 --format^="%ai %H" -- "%file_path%"') do (
+    for /f "tokens=1,5 delims= " %%A in ('powershell -Command "Get-Item -Path \"%file_path%\" | Select-Object -ExpandProperty CreationTime"') do (
         set "file_date=%%A"
-        set "file_hash=%%B"
     )
-    set /a "file_size=git cat-file -s %file_hash%"
+    for /f "tokens=3" %%B in ('powershell -Command "Get-ItemProperty -Path \"%file_path%\" | Select-Object -ExpandProperty Length"') do (
+        set "file_size=%%B"
+    )
 
     REM Check if file size exceeds threshold
     if !file_size! gtr %size_threshold_bytes% (
         set "Files_Found[!index!]=!file_path!"
         set "File_Sizes[!index!]=!file_size!"
-        set "User_ID[!index!]=!file_date:~0,10!"
+        set "User_ID[!index!]=!file_date!"
     )
     REM Display progress
     set /a "progress=(index * 100) / total_files"
