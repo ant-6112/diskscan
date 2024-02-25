@@ -6,6 +6,9 @@ for /R "%dir%" %%G in (*) do (
     set /A sizeMB=%%~zG/1048576
     if !sizeMB! gtr !minSize! (
         for /f "delims=" %%O in ('powershell -command "(Get-Acl '%%G').Owner"') do set owner=%%O
-        echo %%G is !sizeMB! MB, last modified by !owner!
+        set /A "sizeByOwner[!owner!]+=sizeMB"
     )
+)
+for /F "tokens=2,3 delims=[]=" %%G in ('set sizeByOwner[') do (
+    echo User %%G has used !sizeByOwner[%%G]! MB
 )
