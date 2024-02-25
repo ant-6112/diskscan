@@ -1,4 +1,6 @@
 @echo off
-REM This is Listing Down all the Files in the Directory
-ls "./" > "list.txt"
-echo "The Program has Completed"
+for /R %%G in (*) do (
+    if %%~zG gtr 1048576 (
+        echo %%G is %%~zG bytes
+    )
+)
