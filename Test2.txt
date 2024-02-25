@@ -6,7 +6,7 @@ echo Username,Storage Used > storage.csv
 for /R "%dir%" %%G in (*) do (
     set /A sizeMB=%%~zG/1048576
     if !sizeMB! gtr !minSize! (
-        for /f "delims=" %%O in ('powershell -command "(Get-Acl '%%G').Owner"') do set owner=%%O
+        for /f "delims=" %%O in ('powershell -command "(Get-Acl '%%G').Owner -replace '\\\\', '_' -replace '/', '_' -replace ':', '_' -replace '*', '_' -replace '?', '_' -replace '"', '_' -replace '<', '_' -replace '>', '_' -replace '|', '_'"') do set owner=%%O
         set /A "sizeByOwner[!owner!]+=sizeMB"
         echo %%G,!sizeMB! >> "!owner!.csv"
     )
