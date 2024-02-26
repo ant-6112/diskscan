@@ -1,79 +1,11 @@
-@echo off
-setlocal enabledelayedexpansion
+# List files larger than 1 MB in the current directory and subdirectories
 
-REM Set default values
-set "path=."
-set "minimum_size=10.0"
-set "unit=MB"
+Get-ChildItem -Path . -Recurse -File | 
+  Where-Object { $_.Length -ge 1MB } | 
+  Select-Object FullName, @{Name="Size (MB)"; Expression={ $_.Length / 1MB }}
 
-REM Function to convert size to bytes
-:ConvertSizeToBytes
-set "size=%1"
-set "unit=%2"
-if /i "%unit%"=="KB" (set /a "size*=1024")
-if /i "%unit%"=="GB" (set /a "size*=1024*1024")
-exit /b
-
-REM Function to find large files
-:FindLargeFiles
-set "total_files=0"
-for /f %%A in ('call (Get-ChildItem -Path "%path%" -File -Recurse^)^| Measure-Object^| %{$_.Count}') do set "total_files=%%A"
-
-set "multiplier=1"
-if /i "%unit%"=="KB" set "multiplier=1024"
-if /i "%unit%"=="GB" set "multiplier=1048576"
-
-set "size_threshold_bytes=%minimum_size%"
-call :ConvertSizeToBytes %minimum_size% %unit%
-
-set "index=0"
-for /f "delims=" %%F in ('call Get-ChildItem -Path "%path%" -File -Recurse^| ForEach-Object { $_.FullName }') do (
-    set /a "index+=1"
-    set "file_path=%%F"
-    for /f "tokens=1,5 delims= " %%A in ('call Get-Item -Path "%file_path%" ^| Select-Object -ExpandProperty CreationTime') do (
-        set "file_date=%%A"
-    )
-    for /f "tokens=3" %%B in ('call Get-ItemProperty -Path "%file_path%" ^| Select-Object -ExpandProperty Length') do (
-        set "file_size=%%B"
-    )
-
-    REM Check if file size exceeds threshold
-    if !file_size! gtr %size_threshold_bytes% (
-        set "Files_Found[!index!]=!file_path!"
-        set "File_Sizes[!index!]=!file_size!"
-        set "User_ID[!index!]=!file_date!"
-    )
-    REM Display progress
-    set /a "progress=(index * 100) / total_files"
-    echo Searching for large files... !progress!%% complete
-)
-
-REM Display found files
-for /l %%i in (1,1,%index%) do (
-    set "file_path=!Files_Found[%%i]!"
-    set "file_size=!File_Sizes[%%i]!"
-    set "file_date=!User_ID[%%i]!"
-    echo !file_path!: !file_size! bytes (Created on: !file_date!)
-)
-
-REM Sort users by storage usage
-set "user_storage="
-for /l %%i in (1,1,%index%) do (
-    set "user_date=!User_ID[%%i]!"
-    set /a "user_storage[!user_date!]+=!File_Sizes[%%i]!"
-)
-
-REM Export top users data to Excel
-set "temp_file=%temp%\top_users_data.csv"
-echo Date,Storage (%unit%)> "%temp_file%"
-for /f "tokens=2,3 delims== " %%U in ('set user_storage[') do (
-    set /a "storage=%%V / multiplier"
-    echo %%U,!storage!>> "%temp_file%"
-)
-
-REM Open Excel workbook
-start excel "%temp_file%"
-
-echo.
-echo Top Users Data is Exported
-exit /b
+# Explanation:
+# Get-ChildItem -Path . -Recurse -File: This line retrieves information about all files (excluding directories) 
+#                                       in the current directory and its subdirectories.
+# Where-Object { $_.Length -ge 1MB }: This line filters the result to only include files with a size greater than or equal to 1 MB (1MB is defined).
+# Select-Object FullName, @{Name="Size (MB)"; Expression={ $_.Length / 1MB }}: This line selects the file's full path name and calculates the size in MB for display.
