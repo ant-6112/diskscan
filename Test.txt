@@ -1,11 +1,22 @@
-# List files larger than 1 MB in the current directory and subdirectories
+# Get directory path from user
+Write-Host "Enter the directory path: "
+$dirPath = Read-Host
 
-Get-ChildItem -Path . -Recurse -File | 
-  Where-Object { $_.Length -ge 1MB } | 
+# Get minimum size from user (in MB)
+Write-Host "Enter minimum size in MB (e.g., 10): "
+$minSizeMB = Read-Host -AsInt
+
+# Convert minimum size to bytes
+$minSizeBytes = $minSizeMB * 1MB
+
+# List files exceeding the minimum size
+Get-ChildItem -Path $dirPath -Recurse -File | 
+  Where-Object { $_.Length -ge $minSizeBytes } | 
   Select-Object FullName, @{Name="Size (MB)"; Expression={ $_.Length / 1MB }}
 
 # Explanation:
-# Get-ChildItem -Path . -Recurse -File: This line retrieves information about all files (excluding directories) 
-#                                       in the current directory and its subdirectories.
-# Where-Object { $_.Length -ge 1MB }: This line filters the result to only include files with a size greater than or equal to 1 MB (1MB is defined).
-# Select-Object FullName, @{Name="Size (MB)"; Expression={ $_.Length / 1MB }}: This line selects the file's full path name and calculates the size in MB for display.
+# Write-Host prompts the user for input and displays the message.
+# Read-Host stores the user's input in the corresponding variable ($dirPath and $minSizeMB).
+# Read-Host -AsInt converts the user's input for minimum size to an integer.
+# $minSizeBytes calculates the minimum size in bytes by multiplying the user-provided MB value by 1MB.
+# The rest of the script remains the same as before, using the user-provided directory path and minimum size.
