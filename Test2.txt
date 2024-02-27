@@ -1,24 +1,15 @@
-Here are some functionalities that could be added to enhance the script:
+$emailFrom = "sender@example.com"
+$emailTo = "recipient@example.com"
+$subject = "Weekly Storage Report"
+$body = "Please find attached the weekly storage report."
+$smtpServer = "smtp.example.com"
+$smtpPort = 587
+$username = "username"
+$password = ConvertTo-SecureString "password" -AsPlainText -Force
+$credential = New-Object System.Management.Automation.PSCredential ($username, $password)
 
-1. **Filter by File Type**: You could add functionality to filter the files by type. For example, you might want to only consider `.mp4` or `.jpg` files.
-
-2. **Date Range**: You could add functionality to only consider files that were modified within a certain date range.
-
-3. **User Input**: You could modify the script to take user input for the directory path and the size threshold.
-
-4. **Error Handling**: You could add more robust error handling to the script. For example, you could handle the case where the specified directory does not exist.
-
-5. **Logging**: You could add logging to the script to keep a record of what files were found and what actions were taken.
-
-6. **Email Notifications**: You could add functionality to send an email notification with the Excel files attached when the script finishes running.
-
-7. **Database Integration**: You could modify the script to store the file information in a database instead of (or in addition to) an Excel file.
-
-8. **Scheduled Execution**: You could schedule the script to run at regular intervals using a task scheduler.
-
-9. **Interactive Dashboard**: You could create an interactive dashboard with a graphical representation of the data, using tools like PowerBI or Tableau.
-
-10. **Cloud Integration**: If the files are stored in a cloud storage service like AWS S3 or Azure Blob Storage, you could modify the script to work with these services.
+# Send the email with the CSV files attached
+Send-MailMessage -From $emailFrom -To $emailTo -Subject $subject -Body $body -SmtpServer $smtpServer -Port $smtpPort -UseSsl -Credential $credential -Attachments $largeFilesExcelPath, $userStorageExcelPath
 
 # Define the path to the directory
 $directoryPath = "C:\path\to\directory"
