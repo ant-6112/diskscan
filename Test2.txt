@@ -19,3 +19,72 @@ Here are some functionalities that could be added to enhance the script:
 9. **Interactive Dashboard**: You could create an interactive dashboard with a graphical representation of the data, using tools like PowerBI or Tableau.
 
 10. **Cloud Integration**: If the files are stored in a cloud storage service like AWS S3 or Azure Blob Storage, you could modify the script to work with these services.
+
+# Define the path to the directory
+$directoryPath = "C:\path\to\directory"
+
+# Get all files in the directory and its subdirectories
+$allFiles = Get-ChildItem -Path $directoryPath -Recurse -File
+
+# Initialize an ArrayList to store large files
+$largeFiles = New-Object System.Collections.ArrayList
+
+# Loop through all files
+foreach ($file in $allFiles) {
+    # Check if the file size is greater than 10 MB
+    if ($file.Length -gt 10MB) {
+        # Get the owner of the file
+        $acl = Get-Acl $file.FullName
+        $owner = $acl.Owner
+
+        # Calculate the size in MB
+        $sizeInMB = $file.Length / 1MB
+
+        # Create a new object with file details
+        $fileDetails = New-Object PSObject -Property @{
+            File = $file.FullName
+            Size = $sizeInMB
+            Owner = $owner
+        }
+
+        # Add the file details to the large files ArrayList
+        $largeFiles.Add($fileDetails) | Out-Null
+    }
+}
+
+# Define the path to the CSV file for large files
+$largeFilesCsvPath = "LargeFiles.csv"
+
+# Export the large files to a CSV file
+$largeFiles | Export-Csv -Path $largeFilesCsvPath -NoTypeInformation
+
+# Initialize an ArrayList to store user storage details
+$userStorageDetails = New-Object System.Collections.ArrayList
+
+# Group the large files by owner
+$groupedFiles = $largeFiles | Group-Object -Property Owner
+
+# Loop through the grouped files
+foreach ($group in $groupedFiles) {
+    # Calculate the total size for the group
+    $sizes = $group.Group | Measure-Object -Property Size -Sum
+    $totalSize = $sizes.Sum
+
+    # Create a new object with user storage details
+    $storageDetails = New-Object PSObject -Property @{
+        Owner = $group.Name
+        TotalSize = $totalSize
+    }
+
+    # Add the storage details to the user storage details ArrayList
+    $userStorageDetails.Add($storageDetails) | Out-Null
+}
+
+# Sort the user storage details by total size in descending order
+$sortedUserStorageDetails = $userStorageDetails | Sort-Object -Property TotalSize -Descending
+
+# Define the path to the CSV file for user storage details
+$userStorageCsvPath = "StorageByUser.csv"
+
+# Export the user storage details to another CSV file
+$sortedUserStorageDetails | Export-Csv -Path $userStorageCsvPath -NoTypeInformation
