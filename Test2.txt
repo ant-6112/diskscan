@@ -1,17 +1,13 @@
-@echo off
-setlocal enabledelayedexpansion
-set /P dir=Enter a directory path: 
-set /P minSize=Enter the minimum file size (in MB): 
-echo Username,Storage Used > storage.csv
-for /R "%dir%" %%G in (*) do (
-    set /A sizeMB=%%~zG/1048576
-    if !sizeMB! gtr !minSize! (
-        for /f "delims=" %%O in ('powershell -command "(Get-Acl '%%G').Owner"') do set owner=%%O
-        set /A "sizeByOwner[!owner!]+=sizeMB"
-        for /f "delims=" %%P in ('powershell -command "!owner! -replace '\\\\', '_' -replace '/', '_' -replace ':', '_' -replace '*', '_' -replace '?', '_' -replace '\"', '_' -replace '<', '_' -replace '>', '_' -replace '|', '_'"') do set sanitizedOwner=%%P
-        echo %%G,!sizeMB! >> "!sanitizedOwner!.csv"
-    )
-)
-for /F "tokens=2,3 delims=[]=" %%G in ('set sizeByOwner[') do (
-    echo %%G,!sizeByOwner[%%G]! >> storage.csv
-)
+# Define the path to the directory
+$directoryPath = "C:\path\to\directory"
+
+# Get all files in the directory and its subdirectories
+$files = Get-ChildItem -Path $directoryPath -Recurse -File
+
+# Filter the files to only include those larger than 10 MB
+$largeFiles = $files | Where-Object { $_.Length -gt 10MB }
+
+# Output the large files
+$largeFiles | ForEach-Object {
+    Write-Output ("File: " + $_.FullName + ", Size: " + $_.Length/1MB + " MB")
+}
