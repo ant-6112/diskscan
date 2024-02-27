@@ -1,3 +1,8 @@
+# Install the ImportExcel module if not already installed
+if (!(Get-Module -ListAvailable -Name ImportExcel)) {
+    Install-Module -Name ImportExcel -Scope CurrentUser -Force
+}
+
 # Define the path to the directory
 $directoryPath = "C:\path\to\directory"
 
@@ -5,9 +10,25 @@ $directoryPath = "C:\path\to\directory"
 $files = Get-ChildItem -Path $directoryPath -Recurse -File
 
 # Filter the files to only include those larger than 10 MB
-$largeFiles = $files | Where-Object { $_.Length -gt 10MB }
-
-# Output the large files
-$largeFiles | ForEach-Object {
-    Write-Output ("File: " + $_.FullName + ", Size: " + $_.Length/1MB + " MB")
+$largeFiles = $files | Where-Object { $_.Length -gt 10MB } | ForEach-Object {
+    $owner = (Get-Acl $_.FullName).Owner
+    New-Object PSObject -Property @{
+        File = $_.FullName
+        Size = $_.Length / 1MB
+        Owner = $owner
+    }
 }
+
+# Export the large files to an Excel sheet
+$largeFiles | Export-Excel -Path "LargeFiles.xlsx" -WorksheetName "Large Files" -AutoSize
+
+# Group the files by owner and calculate the total size for each owner
+$storageByUser = $largeFiles | Group-Object -Property Owner | ForEach-Object {
+    New-Object PSObject -Property @{
+        Owner = $_.Name
+        TotalSize = ($_.Group | Measure-Object -Property Size -Sum).Sum
+    }
+} | Sort-Object -Property TotalSize -Descending
+
+# Export the storage by user to another Excel sheet
+$storageByUser | Export-Excel -Path "StorageByUser.xlsx" -WorksheetName "Storage By User" -AutoSize
